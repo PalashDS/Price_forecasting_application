@@ -1,27 +1,6 @@
-# Web Scraping
-beautifulsoup4==4.9.3
-requests==2.25.1
-selenium==3.141.0
-
-# Data Processing
-pandas==1.3.3
-numpy==1.21.2
-
-# Machine Learning and Forecasting
-scikit-learn==0.24.2
-statsmodels==0.12.2  # For ARIMA
-tensorflow==2.6.0  # For LSTM and deep learning
-
-# Data Visualization
-matplotlib==3.4.3
-plotly==5.3.1
-dash==2.0.0
-
-# Database (if needed)
-mysql-connector-python==8.0.26  # For MySQL integration
-
-# Testing (if applicable)
-pytest==6.2.5
-
-# Other useful libraries
-jupyter==1.0.0  # If you are using Jupyter notebooks
+tensorflow
+pandas
+streamlit
+numpy
+matplotlib
+pytest

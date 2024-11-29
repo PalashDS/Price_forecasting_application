@@ -1,44 +1,81 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = "streamlit_app"
+        APP_PORT = "8501"
+    }
+
+    tools {
+        dockerTool 'docker' // Use the Docker tool configured in Jenkins
+    }
+
     stages {
-        stage('Clone') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/PalashDS/Price_forecasting_application.git'
+                git branch: 'main', url: 'https://github.com/sameersharmaAI/casestudy2'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Setup Virtual Environment and Install Dependencies') {
             steps {
-                sh 'pip install -r requirements.txt'
+                // Create virtual environment and install dependencies
+                sh '''
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install --upgrade pip
+                pip install -r requirements.txt
+                '''
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'pytest --junitxml=results.xml'
+                sh '''
+                . venv/bin/activate
+                pytest tests/
+                '''
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image with Ansible') {
             steps {
-                echo 'Building the application...'
-                // Add build steps, if applicable, like compiling or packaging code
+                sh '''
+                . venv/bin/activate
+                ansible-playbook -i localhost, -c local playbook.yml --tags build
+                '''
             }
         }
 
-        stage('Deploy') {
+        stage('Stop Existing Container with Ansible') {
             steps {
-                echo 'Deploying application...'
-                // Deploy to a server, upload to cloud, etc.
+                sh '''
+                . venv/bin/activate
+                ansible-playbook -i localhost, -c local playbook.yml --tags stop
+                '''
+            }
+        }
+
+        stage('Deploy Application with Ansible') {
+            steps {
+                sh '''
+                . venv/bin/activate
+                ansible-playbook -i localhost, -c local playbook.yml --tags deploy
+                '''
             }
         }
     }
 
     post {
         always {
-            junit 'results.xml'  // Archiving test results
-            archiveArtifacts artifacts: '**/results.xml', allowEmptyArchive: true
+            echo 'Cleaning up workspace...'
+            sh 'rm -rf venv'  // Remove the virtual environment after the pipeline
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }

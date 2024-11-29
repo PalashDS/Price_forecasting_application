@@ -1,0 +1,15 @@
+- name: Deploy Streamlit App Locally
+  hosts: localhost
+  connection: local  # Use local connection instead of SSH
+  tasks:
+    - name: Build Docker image
+      shell: docker build -t streamlit_app "/mnt/d/term 3/deployment of ai/casestudy2/casestudy2"
+      args:
+        chdir: "/mnt/d/term 3/deployment of ai/casestudy2/casestudy2"  # Set working directory
+
+    - name: Stop existing container (if running)
+      shell: |
+        docker ps -q --filter "name=streamlit_app" | grep -q . && docker stop streamlit_app && docker rm streamlit_app || true
+
+    - name: Start Streamlit app container
+      shell: docker run -d --name streamlit_app -p 8501:8501 streamlit_app
