@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import LSTM, Dropout, Dense
 from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
 
 # Rebuild the LSTM model (if needed)
 MODEL_PATH = "updated_lstm_model.h5"
@@ -17,10 +18,13 @@ except Exception as e:
     st.stop()
 
 # Load scaled data
-DATA_SCALED_PATH = "data_scaled.npy"
+DATA_RESAMPLED_PATH = "data_resampled.csv"
 try:
-    data_scaled = np.load(DATA_SCALED_PATH)
-    st.write(f"Data loaded successfully. Shape: {data_scaled.shape}")
+    data = pd.read_csv(DATA_RESAMPLED_PATH)
+    data.set_index('Datetime', inplace=True)
+    data = np.round(data['Price'])
+    # data_scaled = np.load(DATA_SCALED_PATH)
+    st.write(f"Data loaded successfully. Shape: {data.shape}")
 except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
@@ -37,6 +41,9 @@ if st.button("Predict"):
     st.write("Starting prediction...")
 
     try:
+        data_lstm = data.values.reshape(-1, 1)
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        data_scaled = scaler.fit_transform(data_lstm)
         # Extract the last sequence from the scaled data
         last_sequence = data_scaled[-sequence_length:]
         forecast_sequence = last_sequence.reshape(1, sequence_length, 1)
@@ -50,20 +57,19 @@ if st.button("Predict"):
             forecast_sequence = np.append(forecast_sequence[:, 1:, :], next_price_scaled, axis=1)
 
         # Display results
-        st.write(f"### Forecasted Prices for the Next {future_steps} Time Steps:")
-        scaler = MinMaxScaler(feature_range=(0, 1))
-
+        st.write(f"### Forecasted Prices for the Next {future_steps} minutes:")
         forecasted_prices = scaler.inverse_transform(np.array(forecasted_prices).reshape(-1, 1))
         for i, price in enumerate(forecasted_prices, 1):
-            st.write(f"Time Step {i}: {price:.2f}")
+            st.write(f"Time Step {i}: {price[0]:.2f}")
 
-        # Plot the results
+        # Forecasted Prices  - LSTM
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.plot(range(1, future_steps + 1), forecasted_prices, marker="o", linestyle="--")
         ax.set_xlabel("Future Time Step")
         ax.set_ylabel("Predicted Scaled Price")
         ax.set_title("LSTM Forecast")
         st.pyplot(fig)
+
 
     except Exception as e:
         st.error(f"Error during prediction: {e}")
