@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import LSTM, Dropout, Dense
+from sklearn.preprocessing import MinMaxScaler
 
 # Rebuild the LSTM model (if needed)
 MODEL_PATH = "updated_lstm_model.h5"
@@ -26,7 +27,7 @@ except Exception as e:
 
 # Streamlit app setup
 st.title("LSTM Time-Series Forecasting")
-st.write("Predict future time steps using the pre-trained LSTM model.")
+st.write("Predict future time steps (in minutes) using the pre-trained LSTM model.")
 
 # User input for future time steps
 sequence_length = 50
@@ -50,6 +51,9 @@ if st.button("Predict"):
 
         # Display results
         st.write(f"### Forecasted Prices for the Next {future_steps} Time Steps:")
+        scaler = MinMaxScaler(feature_range=(0, 1))
+
+        forecasted_prices = scaler.inverse_transform(np.array(forecasted_prices).reshape(-1, 1))
         for i, price in enumerate(forecasted_prices, 1):
             st.write(f"Time Step {i}: {price:.2f}")
 
